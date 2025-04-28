@@ -12,7 +12,7 @@ pipeline {
             steps {
                 script {
                     // Check if port 8086 is available, else use 8087
-                    def portCheck = bat(script: 'netstat -ano | findstr :8086', returnStatus: true)
+                    def portCheck = bat(script: 'netstat -ano | findstr :80 86', returnStatus: true)
                     if (portCheck != 0) {
                         bat 'docker run -d -p 8086:8080 --name student-container student-app'
                     } else {
