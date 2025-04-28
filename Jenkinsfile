@@ -19,8 +19,8 @@ pipeline {
         stage('Build Docker Image') {
             steps {
                 script {
-                    // Build the Docker image for your app
-                    bat 'docker build -t ${DOCKER_IMAGE} .'
+                    // Build the Docker image for your app using the correct environment variable syntax for Windows
+                    bat 'docker build -t %DOCKER_IMAGE% .'
                 }
             }
         }
@@ -30,7 +30,7 @@ pipeline {
                 script {
                     // Clean up any existing container with the same name if it exists
                     bat """
-                        FOR /F "tokens=*" %%i IN ('docker ps -aq --filter "name=${CONTAINER_NAME}"') DO (
+                        FOR /F "tokens=*" %%i IN ('docker ps -aq --filter "name=%CONTAINER_NAME%"') DO (
                             echo Stopping container %%i
                             docker stop %%i
                             echo Removing container %%i
@@ -62,7 +62,7 @@ pipeline {
                     }
 
                     // Run the Docker container on the selected port
-                    bat "docker run -d -p ${HOST_PORT}:8086 --name ${CONTAINER_NAME} ${DOCKER_IMAGE}"
+                    bat "docker run -d -p ${HOST_PORT}:8086 --name %CONTAINER_NAME% %DOCKER_IMAGE%"
                     echo "Container is running on port ${HOST_PORT}."
                 }
             }
@@ -73,11 +73,11 @@ pipeline {
         always {
             // Clean up: Remove Docker containers after the pipeline
             bat """
-                FOR /F "tokens=*" %%i IN ('docker ps -q --filter "ancestor=${DOCKER_IMAGE}"') DO (
+                FOR /F "tokens=*" %%i IN ('docker ps -q --filter "ancestor=%DOCKER_IMAGE%"') DO (
                     echo Stopping container %%i
                     docker stop %%i
                 )
-                FOR /F "tokens=*" %%i IN ('docker ps -aq --filter "ancestor=${DOCKER_IMAGE}"') DO (
+                FOR /F "tokens=*" %%i IN ('docker ps -aq --filter "ancestor=%DOCKER_IMAGE%"') DO (
                     echo Removing container %%i
                     docker rm %%i
                 )
