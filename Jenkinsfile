@@ -16,7 +16,7 @@ pipeline {
             steps {
                 script {
                     // Build the application using Maven (adjust if using Gradle or another tool)
-                    sh './mvnw clean package -DskipTests'
+                    bat './mvnw clean package -DskipTests'
                 }
             }
         }
@@ -25,7 +25,7 @@ pipeline {
             steps {
                 script {
                     // Build the Docker image for your app
-                    sh "docker build -t ${DOCKER_IMAGE} ."
+                    bat "docker build -t ${DOCKER_IMAGE} ."
                 }
             }
         }
@@ -34,7 +34,7 @@ pipeline {
             steps {
                 script {
                     // Run the Docker container
-                    sh "docker run -d -p 8086:8086 ${DOCKER_IMAGE}"
+                    bat "docker run -d -p 8086:8086 ${DOCKER_IMAGE}"
                 }
             }
         }
@@ -43,8 +43,8 @@ pipeline {
             steps {
                 script {
                     // Stop and remove any running containers after the build is done
-                    sh "docker ps -q --filter ancestor=${DOCKER_IMAGE} | xargs docker stop || true"
-                    sh "docker ps -aq --filter ancestor=${DOCKER_IMAGE} | xargs docker rm || true"
+                    bat "docker ps -q --filter ancestor=${DOCKER_IMAGE} | xargs docker stop || true"
+                    bat "docker ps -aq --filter ancestor=${DOCKER_IMAGE} | xargs docker rm || true"
                 }
             }
         }
@@ -53,8 +53,8 @@ pipeline {
     post {
         always {
             // Clean up: Remove Docker containers
-            sh "docker ps -q --filter ancestor=${DOCKER_IMAGE} | xargs docker stop || true"
-            sh "docker ps -aq --filter ancestor=${DOCKER_IMAGE} | xargs docker rm || true"
+            bat "docker ps -q --filter ancestor=${DOCKER_IMAGE} | xargs docker stop || true"
+            bat "docker ps -aq --filter ancestor=${DOCKER_IMAGE} | xargs docker rm || true"
         }
     }
 }
