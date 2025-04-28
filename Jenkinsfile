@@ -34,23 +34,24 @@ pipeline {
         stage('Run Docker Container') {
             steps {
                 script {
-                    // Check if port 8086 is already in use
-                    def portAvailable = false
-                    try {
-                        // Check if port 8086 is in use
-                        bat "netstat -ano | findstr :8086"
-                        portAvailable = true
-                    } catch (Exception e) {
-                        echo "Port 8086 is available."
+                    // Try ports 8086, 8087, 8088, etc.
+                    def portFound = false
+                    def triedPorts = ['8086', '8087', '8088', '8089', '8090']
+                    for (port in triedPorts) {
+                        try {
+                            // Check if the port is available
+                            bat "netstat -ano | findstr :${port}"
+                            echo "Port ${port} is already in use."
+                        } catch (Exception e) {
+                            echo "Port ${port} is available."
+                            HOST_PORT = port
+                            portFound = true
+                            break
+                        }
                     }
 
-                    // If port 8086 is already in use, change to another port
-                    if (portAvailable) {
-                        echo "Port 8086 is already in use. Trying port 8087."
-                        // Assign a new port (e.g., 8087) if 8086 is occupied
-                        script {
-                            HOST_PORT = '8087'
-                        }
+                    if (!portFound) {
+                        error "No available ports found."
                     }
 
                     // Run the Docker container on the selected port
