@@ -38,15 +38,15 @@ pipeline {
                     def portFound = false
                     def triedPorts = ['8086', '8087', '8088', '8089', '8090']
                     for (port in triedPorts) {
-                        try {
-                            // Check if the port is available
-                            bat "netstat -ano | findstr :8088"
-                            echo "Port ${port} is already in use."
-                        } catch (Exception e) {
+                        echo "Checking port ${port}..."
+                        def result = bat(script: "netstat -ano | findstr :${port}", returnStatus: true)
+                        if (result != 0) {
                             echo "Port ${port} is available."
                             HOST_PORT = port
                             portFound = true
                             break
+                        } else {
+                            echo "Port ${port} is in use."
                         }
                     }
 
