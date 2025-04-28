@@ -43,8 +43,10 @@ pipeline {
             steps {
                 script {
                     // Stop and remove any running containers after the build is done
-                    bat "docker ps -q --filter ancestor=${DOCKER_IMAGE} | xargs docker stop || true"
-                    bat "docker ps -aq --filter ancestor=${DOCKER_IMAGE} | xargs docker rm || true"
+                    bat """
+                        FOR /F "tokens=*" %%i IN ('docker ps -q --filter ancestor=${DOCKER_IMAGE}') DO docker stop %%i
+                        FOR /F "tokens=*" %%i IN ('docker ps -aq --filter ancestor=${DOCKER_IMAGE}') DO docker rm %%i
+                    """
                 }
             }
         }
@@ -53,8 +55,10 @@ pipeline {
     post {
         always {
             // Clean up: Remove Docker containers
-            bat "docker ps -q --filter ancestor=${DOCKER_IMAGE} | xargs docker stop || true"
-            bat "docker ps -aq --filter ancestor=${DOCKER_IMAGE} | xargs docker rm || true"
+            bat """
+                FOR /F "tokens=*" %%i IN ('docker ps -q --filter ancestor=${DOCKER_IMAGE}') DO docker stop %%i
+                FOR /F "tokens=*" %%i IN ('docker ps -aq --filter ancestor=${DOCKER_IMAGE}') DO docker rm %%i
+            """
         }
     }
 }
