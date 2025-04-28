@@ -1,12 +1,6 @@
 pipeline {
     agent any
 
-    environment {
-        DOCKER_IMAGE = 'container-student'  // Docker image name
-        CONTAINER_NAME = 'my-student-container'  // Container name
-        HOST_PORT = '8086'  // Default host port
-    }
-
     stages {
         stage('Checkout') {
             steps {
@@ -16,7 +10,7 @@ pipeline {
 
         stage('Build with Maven') {
             steps {
-                bat 'mvn clean install'  // Build the application using Maven
+                bat 'mvnw clean install'  // Build the application using Maven Wrapper
             }
         }
 
