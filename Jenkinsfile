@@ -10,8 +10,8 @@ pipeline {
         stage('Build with Maven') {
             steps {
                 script {
-                    // Build the application using Maven
-                    bat 'mvn clean install'
+                    // Use Maven Wrapper if 'mvn' is not available globally
+                    bat './mvnw clean install'  // Use Maven wrapper (mvnw)
                 }
             }
         }
