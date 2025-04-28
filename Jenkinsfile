@@ -31,7 +31,7 @@ pipeline {
                 script {
                     // Remove any existing container with the same name if it exists
                     bat """
-                        FOR /F "tokens=*" %%i IN ('docker ps -aq --filter "name=${CONTAINER_NAME}"') DO (
+                        FOR /F "tokens=*" %%i IN ('docker ps -aq --filter name=${CONTAINER_NAME}') DO (
                             echo Stopping container %%i
                             docker stop %%i
                             echo Removing container %%i
@@ -71,11 +71,11 @@ pipeline {
         always {
             // Clean up: Remove Docker containers after the pipeline
             bat """
-                FOR /F "tokens=*" %%i IN ('docker ps -q --filter "ancestor=${DOCKER_IMAGE}"') DO (
+                FOR /F "tokens=*" %%i IN ('docker ps -q --filter ancestor=${DOCKER_IMAGE}') DO (
                     echo Stopping container %%i
                     docker stop %%i
                 )
-                FOR /F "tokens=*" %%i IN ('docker ps -aq --filter "ancestor=${DOCKER_IMAGE}"') DO (
+                FOR /F "tokens=*" %%i IN ('docker ps -aq --filter ancestor=${DOCKER_IMAGE}') DO (
                     echo Removing container %%i
                     docker rm %%i
                 )
