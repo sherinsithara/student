@@ -2,7 +2,8 @@ pipeline {
     agent any
 
     environment {
-        DOCKER_IMAGE = 'container-student' // Docker image name
+        DOCKER_IMAGE = 'container-student'  // Docker image name
+        HOST_PORT = '8086'  // Default host port
     }
 
     stages {
@@ -33,8 +34,28 @@ pipeline {
         stage('Run Docker Container') {
             steps {
                 script {
-                    // Run the Docker container
-                    bat "docker run -d -p 8086:8086 ${DOCKER_IMAGE}"
+                    // Check if port 8086 is already in use
+                    def portAvailable = false
+                    try {
+                        // Check if port 8086 is in use
+                        bat "netstat -ano | findstr :8086"
+                        portAvailable = true
+                    } catch (Exception e) {
+                        echo "Port 8086 is available."
+                    }
+
+                    // If port 8086 is already in use, change to another port
+                    if (portAvailable) {
+                        echo "Port 8086 is already in use. Trying port 8087."
+                        // Assign a new port (e.g., 8087) if 8086 is occupied
+                        script {
+                            HOST_PORT = '8087'
+                        }
+                    }
+
+                    // Run the Docker container on the selected port
+                    bat "docker run -d -p ${HOST_PORT}:8086 ${DOCKER_IMAGE}"
+                    echo "Container is running on port ${HOST_PORT}."
                 }
             }
         }
