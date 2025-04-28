@@ -2,58 +2,46 @@ pipeline {
     agent any
 
     environment {
-        DOCKER_IMAGE = 'student-app'   // Docker image name
-        CONTAINER_NAME = 'my-student-container'  // New container name
+        DOCKER_IMAGE = 'container-student'  // Docker image name
+        CONTAINER_NAME = 'my-student-container'  // Container name
+        HOST_PORT = '8086'  // Default host port
     }
 
     stages {
+        stage('Checkout') {
+            steps {
+                checkout scm // Checkout the source code from Git
+            }
+        }
+
         stage('Build with Maven') {
             steps {
-                script {
-                    // Use Maven Wrapper if 'mvn' is not available globally
-                    bat './mvnw clean install'  // Use Maven wrapper (mvnw)
-                }
+                bat 'mvn clean install'  // Build the application using Maven
             }
         }
 
         stage('Build Docker Image') {
             steps {
-                script {
-                    // Build the Docker image for your app using the correct environment variable syntax for Windows
-                    bat 'docker build -t %DOCKER_IMAGE% .'
-                }
+                bat "docker build -t ${DOCKER_IMAGE} ."  // Build Docker image
             }
         }
 
         stage('Run Docker Container') {
             steps {
                 script {
-                    // Clean up any existing container with the same name if it exists
-                    bat """
-                        FOR /F "tokens=*" %%i IN ('docker ps -aq --filter "name=%CONTAINER_NAME%"') DO (
-                            echo Stopping container %%i
-                            docker stop %%i
-                            echo Removing container %%i
-                            docker rm %%i
-                        )
-                    """
-
-                    // Declare variable to hold host port
-                    def HOST_PORT = '8086'  // Default host port
+                    // Try ports 8086, 8087, 8088, etc.
                     def portFound = false
                     def triedPorts = ['8086', '8087', '8088', '8089', '8090']
-
-                    // Try ports 8086, 8087, 8088, etc. to find an available port
                     for (port in triedPorts) {
-                        echo "Checking port ${port}..."
-                        def result = bat(script: "netstat -ano | findstr :${port}", returnStatus: true)
-                        if (result != 0) {
+                        try {
+                            // Check if the port is available
+                            bat "netstat -ano | findstr :${port}"
+                            echo "Port ${port} is already in use."
+                        } catch (Exception e) {
                             echo "Port ${port} is available."
                             HOST_PORT = port
                             portFound = true
                             break
-                        } else {
-                            echo "Port ${port} is in use."
                         }
                     }
 
@@ -62,8 +50,24 @@ pipeline {
                     }
 
                     // Run the Docker container on the selected port
-                    bat "docker run -d -p ${HOST_PORT}:8086 --name %CONTAINER_NAME% %DOCKER_IMAGE%"
+                    bat "docker run -d -p ${HOST_PORT}:8086 --name ${CONTAINER_NAME} ${DOCKER_IMAGE}"
                     echo "Container is running on port ${HOST_PORT}."
+                }
+            }
+        }
+
+        stage('Cleanup') {
+            steps {
+                script {
+                    // Stop and remove any running containers with the name 'my-student-container'
+                    bat """
+                        FOR /F "tokens=*" %%i IN ('docker ps -aq --filter "name=${CONTAINER_NAME}"') DO (
+                            echo Stopping container %%i
+                            docker stop %%i
+                            echo Removing container %%i
+                            docker rm %%i
+                        )
+                    """
                 }
             }
         }
@@ -71,13 +75,11 @@ pipeline {
 
     post {
         always {
-            // Clean up: Remove Docker containers after the pipeline
+            // Clean up: Remove Docker containers after the build is done
             bat """
-                FOR /F "tokens=*" %%i IN ('docker ps -q --filter "ancestor=%DOCKER_IMAGE%"') DO (
+                FOR /F "tokens=*" %%i IN ('docker ps -aq --filter "name=${CONTAINER_NAME}"') DO (
                     echo Stopping container %%i
                     docker stop %%i
-                )
-                FOR /F "tokens=*" %%i IN ('docker ps -aq --filter "ancestor=%DOCKER_IMAGE%"') DO (
                     echo Removing container %%i
                     docker rm %%i
                 )
