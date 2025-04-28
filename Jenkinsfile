@@ -40,7 +40,7 @@ pipeline {
                     for (port in triedPorts) {
                         try {
                             // Check if the port is available
-                            bat "netstat -ano | findstr :${port}"
+                            bat "netstat -ano | findstr :8088"
                             echo "Port ${port} is already in use."
                         } catch (Exception e) {
                             echo "Port ${port} is available."
