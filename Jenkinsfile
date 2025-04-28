@@ -3,7 +3,8 @@ pipeline {
 
     environment {
         DOCKER_IMAGE = 'container-student'  // Docker image name
-        HOST_PORT = '8086'  // Default host port for the application
+        HOST_PORT = '8086'  // Default host port
+        CONTAINER_NAME = 'student-container'  // Default container name
     }
 
     stages {
@@ -28,6 +29,16 @@ pipeline {
         stage('Run Docker Container') {
             steps {
                 script {
+                    // Remove any existing container with the same name if it exists
+                    bat """
+                        FOR /F "tokens=*" %%i IN ('docker ps -aq --filter name=${CONTAINER_NAME}') DO (
+                            echo Stopping container %%i
+                            docker stop %%i
+                            echo Removing container %%i
+                            docker rm %%i
+                        )
+                    """
+
                     // Try ports 8086, 8087, 8088, etc. to find an available port
                     def portFound = false
                     def triedPorts = ['8086', '8087', '8088', '8089', '8090']
@@ -49,7 +60,7 @@ pipeline {
                     }
 
                     // Run the Docker container on the selected port
-                    bat "docker run -d -p ${HOST_PORT}:8086 --name student-container ${DOCKER_IMAGE}"
+                    bat "docker run -d -p ${HOST_PORT}:8086 --name ${CONTAINER_NAME} ${DOCKER_IMAGE}"
                     echo "Container is running on port ${HOST_PORT}."
                 }
             }
