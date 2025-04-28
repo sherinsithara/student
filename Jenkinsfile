@@ -3,8 +3,7 @@ pipeline {
 
     environment {
         DOCKER_IMAGE = 'student-app'   // Docker image name
-        CONTAINER_NAME = 'student-container'  // Default container name
-        HOST_PORT = '8086'  // Default host port
+        CONTAINER_NAME = 'my-student-container'  // New container name
     }
 
     stages {
@@ -39,9 +38,12 @@ pipeline {
                         )
                     """
 
-                    // Try ports 8086, 8087, 8088, etc. to find an available port
+                    // Declare variable to hold host port
+                    def HOST_PORT = '8086'  // Default host port
                     def portFound = false
                     def triedPorts = ['8086', '8087', '8088', '8089', '8090']
+
+                    // Try ports 8086, 8087, 8088, etc. to find an available port
                     for (port in triedPorts) {
                         echo "Checking port ${port}..."
                         def result = bat(script: "netstat -ano | findstr :${port}", returnStatus: true)
@@ -60,7 +62,7 @@ pipeline {
                     }
 
                     // Run the Docker container on the selected port
-                    bat "docker run -d -p ${HOST_PORT}:8080 --name ${CONTAINER_NAME} ${DOCKER_IMAGE}"
+                    bat "docker run -d -p ${HOST_PORT}:8086 --name ${CONTAINER_NAME} ${DOCKER_IMAGE}"
                     echo "Container is running on port ${HOST_PORT}."
                 }
             }
