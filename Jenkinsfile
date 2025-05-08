@@ -12,8 +12,8 @@ pipeline {
         stage('Build Docker Image') {
             steps {
                 script {
-                    // Disable sandbox here if the step fails due to it
-                    bat "docker build -t ${IMAGE_NAME} ."
+                    // Build Docker image using standard bat command
+                    bat "docker build -t %IMAGE_NAME% ."
                 }
             }
         }
@@ -21,15 +21,21 @@ pipeline {
         stage('Run Docker Container') {
             steps {
                 script {
-                    def portCheck = bat(script: "netstat -ano | findstr :${PORT_1}", returnStatus: true)
+                    // Check if PORT_1 is in use (Windows command)
+                    def portInUse = bat(
+                        script: "netstat -ano | findstr :%PORT_1%",
+                        returnStatus: true
+                    )
 
-                    // Stop and remove existing container if it exists
-                    bat "docker ps -a -q -f name=${CONTAINER_NAME} | ForEach-Object { docker stop $_; docker rm $_ }"
+                    // Stop and remove container if it exists
+                    bat "docker stop %CONTAINER_NAME% || exit 0"
+                    bat "docker rm %CONTAINER_NAME% || exit 0"
 
-                    if (portCheck != 0) {
-                        bat "docker run -d -p ${PORT_1}:${PORT_1} --name ${CONTAINER_NAME} ${IMAGE_NAME}"
+                    // Choose port based on availability
+                    if (portInUse != 0) {
+                        bat "docker run -d -p %PORT_1%:%PORT_1% --name %CONTAINER_NAME% %IMAGE_NAME%"
                     } else {
-                        bat "docker run -d -p ${PORT_2}:${PORT_2} --name ${CONTAINER_NAME} ${IMAGE_NAME}"
+                        bat "docker run -d -p %PORT_2%:%PORT_2% --name %CONTAINER_NAME% %IMAGE_NAME%"
                     }
                 }
             }
