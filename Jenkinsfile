@@ -2,43 +2,59 @@ pipeline {
     agent any
 
     environment {
-        IMAGE_NAME = 'student-app'
+        DOCKER_IMAGE = 'student-app'
+        DOCKER_TAG = 'latest'
         CONTAINER_NAME = 'student-container'
-        PORT_1 = '8086'
-        PORT_2 = '8087'
     }
 
     stages {
+        stage('Checkout') {
+            steps {
+                git 'https://github.com/sherinsithara/student.git'
+            }
+        }
+
+        stage('Build JAR') {
+            steps {
+                bat 'mvn clean package -DskipTests'
+            }
+        }
+
         stage('Build Docker Image') {
             steps {
                 script {
-                    // Build Docker image using standard bat command
-                    bat "docker build -t %IMAGE_NAME% ."
+                    docker.build("${DOCKER_IMAGE}:${DOCKER_TAG}")
                 }
+            }
+        }
+
+        stage('Trivy Scan') {
+            steps {
+                echo 'Running Trivy vulnerability scan...'
+                bat "trivy image ${DOCKER_IMAGE}:${DOCKER_TAG}"
             }
         }
 
         stage('Run Docker Container') {
             steps {
                 script {
-                    // Check if PORT_1 is in use (Windows command)
-                    def portInUse = bat(
-                        script: "netstat -ano | findstr :%PORT_1%",
-                        returnStatus: true
-                    )
-
-                    // Stop and remove container if it exists
-                    bat "docker stop %CONTAINER_NAME% || exit 0"
-                    bat "docker rm %CONTAINER_NAME% || exit 0"
-
-                    // Choose port based on availability
-                    if (portInUse != 0) {
-                        bat "docker run -d -p %PORT_1%:%PORT_1% --name %CONTAINER_NAME% %IMAGE_NAME%"
-                    } else {
-                        bat "docker run -d -p %PORT_2%:%PORT_2% --name %CONTAINER_NAME% %IMAGE_NAME%"
-                    }
+                    bat "docker rm -f ${CONTAINER_NAME} || true"
+                    bat "docker run -d --name ${CONTAINER_NAME} -p 8086:8086 ${DOCKER_IMAGE}:${DOCKER_TAG}"
                 }
             }
+        }
+
+        stage('Post-Build Actions') {
+            steps {
+                echo 'Build, scan, and deployment complete!'
+            }
+        }
+    }
+
+    post {
+        always {
+            bat "docker stop ${CONTAINER_NAME} || true"
+            bat "docker rm ${CONTAINER_NAME} || true"
         }
     }
 }
