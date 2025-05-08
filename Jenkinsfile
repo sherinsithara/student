@@ -5,6 +5,7 @@ pipeline {
         DOCKER_IMAGE = 'student-app'
         DOCKER_TAG = 'latest'
         CONTAINER_NAME = 'student-container'
+        JAR_FILE = 'target/student-application-0.0.1-SNAPSHOT.jar'
     }
 
     stages {
@@ -16,7 +17,8 @@ pipeline {
 
         stage('Build JAR') {
             steps {
-                bat 'mvn clean package -DskipTests'
+                // Use the full path to Maven (if needed)
+                bat '"C:\\Program Files\\Apache\\Maven\\bin\\mvn" clean package -DskipTests'
             }
         }
 
@@ -31,14 +33,17 @@ pipeline {
         stage('Trivy Scan') {
             steps {
                 echo 'Running Trivy vulnerability scan...'
-                bat "trivy image ${DOCKER_IMAGE}:${DOCKER_TAG}"
+                script {
+                    // Run Trivy scan on the Docker image
+                    bat "trivy image ${DOCKER_IMAGE}:${DOCKER_TAG} --format table --exit-code 1 --no-progress"
+                }
             }
         }
 
         stage('Run Docker Container') {
             steps {
                 script {
-                    bat "docker rm -f ${CONTAINER_NAME} || true"
+                    bat "docker rm -f ${CONTAINER_NAME} || exit 0"
                     bat "docker run -d --name ${CONTAINER_NAME} -p 8086:8086 ${DOCKER_IMAGE}:${DOCKER_TAG}"
                 }
             }
@@ -46,15 +51,15 @@ pipeline {
 
         stage('Post-Build Actions') {
             steps {
-                echo 'Build, scan, and deployment complete!'
+                echo 'Build and deployment complete!'
             }
         }
     }
 
     post {
         always {
-            bat "docker stop ${CONTAINER_NAME} || true"
-            bat "docker rm ${CONTAINER_NAME} || true"
+            bat "docker stop ${CONTAINER_NAME} || exit 0"
+            bat "docker rm ${CONTAINER_NAME} || exit 0"
         }
     }
 }
