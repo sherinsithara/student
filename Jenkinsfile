@@ -14,15 +14,10 @@ pipeline {
             }
         }
 
-        stage('Build JAR') {
-            steps {
-                bat 'mvn clean package -DskipTests'
-            }
-        }
-
         stage('Build Docker Image') {
             steps {
                 script {
+                    // Build the Docker image
                     docker.build("${DOCKER_IMAGE}:${DOCKER_TAG}")
                 }
             }
@@ -37,6 +32,7 @@ pipeline {
 
     post {
         always {
+            // Stop and remove the container after the build
             bat "docker stop ${CONTAINER_NAME} || true"
             bat "docker rm ${CONTAINER_NAME} || true"
         }
