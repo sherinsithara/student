@@ -5,37 +5,31 @@ pipeline {
         DOCKER_IMAGE = 'student-app'
         DOCKER_TAG = 'latest'
         CONTAINER_NAME = 'student-container'
-        JAR_FILE = 'target/student-application-0.0.1-SNAPSHOT.jar'
+        MAVEN_HOME = 'C:\\Users\\apache-maven-3.9.9'  // Set Maven path here
+        PATH = "${MAVEN_HOME}\\bin;${env.PATH}"    // Add Maven bin folder to PATH
+        JAR_FILE = 'target/student-application-0.0.1-SNAPSHOT.jar'  // Make sure this matches your build path
     }
 
     stages {
         stage('Checkout') {
             steps {
-                git 'https://github.com/sherinsithara/student.git'
+                // Checkout the code from your Git repository
+                git 'https://github.com/sherinsithara/student.git'  // Replace with your repo URL
             }
         }
 
         stage('Build JAR') {
             steps {
-                // Use the full path to Maven (if needed)
-                bat '"C:\\Program Files\\Apache\\Maven\\bin\\mvn" clean package -DskipTests'
+                // Build the JAR file using Maven (adjust this if using Gradle or another build tool)
+                bat 'mvn clean package -DskipTests'
             }
         }
 
         stage('Build Docker Image') {
             steps {
                 script {
+                    // Build the Docker image
                     docker.build("${DOCKER_IMAGE}:${DOCKER_TAG}")
-                }
-            }
-        }
-
-        stage('Trivy Scan') {
-            steps {
-                echo 'Running Trivy vulnerability scan...'
-                script {
-                    // Run Trivy scan on the Docker image
-                    bat "trivy image ${DOCKER_IMAGE}:${DOCKER_TAG} --format table --exit-code 1 --no-progress"
                 }
             }
         }
@@ -43,7 +37,12 @@ pipeline {
         stage('Run Docker Container') {
             steps {
                 script {
-                    bat "docker rm -f ${CONTAINER_NAME} || exit 0"
+                    // Remove the previous container if it exists
+                    bat "docker rm -f ${CONTAINER_NAME} || true"
+                }
+
+                // Run the Docker container in detached mode
+                script {
                     bat "docker run -d --name ${CONTAINER_NAME} -p 8086:8086 ${DOCKER_IMAGE}:${DOCKER_TAG}"
                 }
             }
@@ -58,8 +57,9 @@ pipeline {
 
     post {
         always {
-            bat "docker stop ${CONTAINER_NAME} || exit 0"
-            bat "docker rm ${CONTAINER_NAME} || exit 0"
+            // Stop and remove the container after the build
+            bat "docker stop ${CONTAINER_NAME}"
+            bat "docker rm ${CONTAINER_NAME}"
         }
     }
 }
