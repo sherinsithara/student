@@ -5,7 +5,7 @@ pipeline {
         DOCKER_IMAGE = 'student-app'
         DOCKER_TAG = 'latest'
         CONTAINER_NAME = 'student-container'
-        JAR_FILE = 'target/student-application-0.0.1-SNAPSHOT.jar'  // Make sure this matches your build path
+        JAR_FILE = 'target/student-application-0.0.1-SNAPSHOT.jar'  // Ensure this matches your build path
     }
 
     stages {
@@ -18,8 +18,11 @@ pipeline {
 
         stage('Build JAR') {
             steps {
-                // Build the JAR file using Maven (adjust this if using Gradle or another build tool)
-                bat 'mvn clean package -DskipTests'
+                script {
+                    // Use the Maven tool configured in Jenkins
+                    def mvnHome = tool name: 'Maven 3', type: 'Maven'  // Adjust name if you configured differently
+                    bat "\"${mvnHome}/bin/mvn\" clean package -DskipTests"
+                }
             }
         }
 
