@@ -2,65 +2,35 @@ pipeline {
     agent any
 
     environment {
-        DOCKER_IMAGE = 'student-app'
-        DOCKER_TAG = 'latest'
+        IMAGE_NAME = 'student-app'
         CONTAINER_NAME = 'student-container'
-        JAR_FILE = 'target/student-application-0.0.1-SNAPSHOT.jar'  // Ensure this matches your build path
+        PORT_1 = '8086'
+        PORT_2 = '8087'
     }
 
     stages {
-        stage('Checkout') {
-            steps {
-                // Checkout the code from your Git repository
-                git 'https://github.com/sherinsithara/student.git'  // Replace with your repo URL
-            }
-        }
-
-        stage('Build JAR') {
-            steps {
-                script {
-                    // Use the Maven tool configured in Jenkins
-                    def mvnHome = tool name: 'Maven 3', type: 'Maven'  // This should match the name you provided in the configuration
-                    bat "\"${mvnHome}/bin/mvn\" clean package -DskipTests"
-                }
-            }
-        }
-
         stage('Build Docker Image') {
             steps {
-                script {
-                    // Build the Docker image
-                    docker.build("${DOCKER_IMAGE}:${DOCKER_TAG}")
-                }
+                bat 'docker build -t ${IMAGE_NAME} .'
             }
         }
 
         stage('Run Docker Container') {
             steps {
                 script {
-                    // Remove the previous container if it exists
-                    bat "docker rm -f ${CONTAINER_NAME} || true"
-                }
+                    // Check if port 8086 is available, else use 8087
+                    def portCheck = bat(script: "netstat -ano | findstr :${PORT_1}", returnStatus: true)
 
-                // Run the Docker container in detached mode
-                script {
-                    bat "docker run -d --name ${CONTAINER_NAME} -p 8086:8086 ${DOCKER_IMAGE}:${DOCKER_TAG}"
+                    // Stop and remove existing container if it exists
+                    bat "docker ps -a -q -f name=${CONTAINER_NAME} | ForEach-Object { docker stop $_; docker rm $_ }"
+
+                    if (portCheck != 0) {
+                        bat "docker run -d -p ${PORT_1}:${PORT_1} --name ${CONTAINER_NAME} ${IMAGE_NAME}"
+                    } else {
+                        bat "docker run -d -p ${PORT_2}:${PORT_2} --name ${CONTAINER_NAME} ${IMAGE_NAME}"
+                    }
                 }
             }
-        }
-
-        stage('Post-Build Actions') {
-            steps {
-                echo 'Build and deployment complete!'
-            }
-        }
-    }
-
-    post {
-        always {
-            // Stop and remove the container after the build
-            bat "docker stop ${CONTAINER_NAME}"
-            bat "docker rm ${CONTAINER_NAME}"
         }
     }
 }
