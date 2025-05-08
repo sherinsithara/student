@@ -20,7 +20,7 @@ pipeline {
             steps {
                 script {
                     // Use the Maven tool configured in Jenkins
-                    def mvnHome = tool name: 'Maven 3', type: 'Maven'  // Adjust name if you configured differently
+                    def mvnHome = tool name: 'Maven 3', type: 'Maven'  // This should match the name you provided in the configuration
                     bat "\"${mvnHome}/bin/mvn\" clean package -DskipTests"
                 }
             }
