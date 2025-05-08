@@ -11,14 +11,17 @@ pipeline {
     stages {
         stage('Build Docker Image') {
             steps {
-                bat "docker build -t ${IMAGE_NAME} ."
+                script {
+                    // Disable the Groovy Sandbox here for the Docker build
+                    bat "docker build -t ${IMAGE_NAME} ."
+                }
             }
         }
 
         stage('Run Docker Container') {
             steps {
                 script {
-                    // Check if port 8086 is available, else use 8087
+                    // Disable the Groovy Sandbox here as well for Docker run
                     def portCheck = bat(script: "netstat -ano | findstr :${PORT_1}", returnStatus: true)
 
                     // Stop and remove existing container if it exists
