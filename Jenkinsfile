@@ -39,7 +39,13 @@ pipeline {
             steps {
                 script {
                     // Run Trivy vulnerability scan on the built Docker image
-                    bat "docker run --rm ${TRIVY_IMAGE} --docker ${DOCKER_IMAGE}:${DOCKER_TAG} --format json --output trivy-report.json"
+                    echo 'Running Trivy vulnerability scan...'
+                    try {
+                        bat "docker run --rm ${TRIVY_IMAGE} --docker ${DOCKER_IMAGE}:${DOCKER_TAG} --format json --output trivy-report.json"
+                    } catch (Exception e) {
+                        echo "Trivy scan failed: ${e}"
+                        currentBuild.result = 'FAILURE'
+                    }
                 }
             }
         }
