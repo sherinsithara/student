@@ -12,7 +12,7 @@ pipeline {
         stage('Checkout') {
             steps {
                 // Checkout the code from your Git repository
-                git 'https://github.com/your-repo/student-app.git'  // Replace with your repo URL
+                git 'https://github.com/sherinsithara/student.git'  // Replace with your repo URL
             }
         }
 
